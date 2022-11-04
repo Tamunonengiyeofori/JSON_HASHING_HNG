@@ -1,48 +1,66 @@
 import pandas
 import json
 import hashlib
+from csv import DictReader, DictWriter
+
 
 # Receive file path as input from user
-file_path = input("Please enter the csv file path: ").strip()
+csv_file_path = input("Please enter the csv file path: ").strip()
+# csv_file_path = "HNGi9_CSV_FILE_2.csv"
 
-def Generate_Hash_CSV(file_path):
-    # CREATE A PANDAS DTAFRAME WITH DATA FROM THE CSV FILE
-    nft_df = pandas.read_csv(file_path)
+
+def Format_CSV(csv_file_path):
+    # OPEN THE CSV FILE AND CONVERT TO A DATAFRAME USING PANDAS
+    new_df = pandas.read_csv(csv_file_path)
+    # CREATE A LIST OF ALL THE COLUMN NAMES IN THE DATAFRAME
+    df_columns_list = new_df.columns
+    # LOOP THROUGH THE COLUMNS NAMES IN THE LIST AND FORMAT THE NAMES IN THE DATAFRAME TO BE LOWERCASE WITHOUT WHITESPACE
+    for column in df_columns_list:
+        new_df.rename(columns={column: column.lower().strip().replace(" ","")}, inplace=True)
+    # SAVE THE CHANGES TO THE CSV FILE
+    new_df.to_csv(csv_file_path, index=False)
+
+
+def Generate_Hash_CSV(csv_file_path):
+    # CAll THE FUNCTION TO FORMAT THE CSV BEFORE GENERATING THE HASH
+    Format_CSV(csv_file_path)
+    # CREATE A PANDAS DATAFRAME WITH DATA FROM THE CSV FILE
+    nft_df = pandas.read_csv(csv_file_path)
     # CREATE A DICTIONARY TO STORE JSON EQUIVALENT OF EACH ROW IN THE DATAFRAME 
     data_dict = {}
     # LOOP THROUGH EACH ROW IN THE DATA FRAME TO CREATE A DICTIONARY THAT CONFORMS TO THE NFT CHIP-0007 FORMAT
     for (index, row) in nft_df.iterrows():
             new_data =  { row.filename: {
             "format": "CHIP-0007",
-            "name": row.filename,
+            "name": row.name ,
             "description": row.description,
-            "minting_tool": "SuperMinter/2.5.2",
+            "minting_tool": str(row.teamnames),
             "sensitive_content": False,
-            "series_number": row.serialnumber,
-            "series_total": 1000,
+            "series_number": row.seriesnumber,
+            "series_total": row.seriesnumber,
             "collection": {
-                "name": f"Example {row.filename} collection",
+                "name": f"Example {row.name} collection",
                 "id": row.uuid,
                 "attributes": [
                     {
                         "type": "description",
-                        "value": f"Example {row.filename} collection is the best {row.filename} collection. Get yours today!"
+                        "value": f"Example {row.name} collection is the best {row.name} collection. Get yours today!"
                     },
                     {
                         "type": "icon",
-                        "value": f"https://{row.filename}.com/image/icon.png"
+                        "value": f"https://{row.name}.com/image/icon.png"
                     },
                     {
                         "type": "banner",
-                        "value": f"https://{row.filename}.com/image/banner.png"
+                        "value": f"https://{row.name}.com/image/banner.png"
                     },
                     {
                         "type": "twitter",
-                        "value": f"Example{row.filename}"
+                        "value": f"Example{row.name}"
                     },
                     {
                         "type": "website",
-                        "value": f"https://example{row.filename}collection.com/"
+                        "value": f"https://example{row.name}collection.com/"
                     }
                 ]
             }
@@ -65,12 +83,13 @@ def Generate_Hash_CSV(file_path):
         print(hash_value)
 
         # Create a new dataframe
-        new_dataframe = pandas.read_csv(file_path)
+        new_dataframe = pandas.read_csv(csv_file_path)
         # Loop through the new dataframe and replace all the rows under the hash column with the hash value of the json
         for (index, row) in new_dataframe.iterrows():
             new_dataframe.loc[index, "hash"] = hash_value
         # Create a new csv file with the updated changes
-        new_dataframe.to_csv(f"{file_path.rstrip('.csv')}.output.csv")
+        new_dataframe.to_csv(f"{csv_file_path.rstrip('.csv')}.output.csv", index=False)
+
 
 # Call Function to generate new CSV with Hash
-Generate_Hash_CSV(file_path)
+Generate_Hash_CSV(csv_file_path)
